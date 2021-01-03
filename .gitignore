@@ -152,3 +152,4 @@ fabric.properties
 
 input_file.json
 results.csv
+mlruns
