@@ -1,0 +1,30 @@
+{
+  "offices":
+  {
+    "office_1":
+	{
+	  "people": 2,
+	  "area": 16,
+	  "windows_direction": "north",
+	  "devices":
+	  [
+	    {
+	      "description": "radiator_1",
+		  "serialNumber": "00158D000192D255"
+		},
+		{
+	      "description": "temperature_wall",
+		  "serialNumber": "0015BC00350010A1"
+		},
+	    {
+	      "description": "temperature_window",
+		  "serialNumber": "0015BC0035001050"
+		},
+		{
+	      "description": "temperature_middle",
+		  "serialNumber": "0015BC0035001299"
+		}
+	  ]
+	}
+  }
+}
