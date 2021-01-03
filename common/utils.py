@@ -75,7 +75,7 @@ def process_supply_points_file(path: str, serial_numbers, device_name=None):
     return df_temperatures
 
 
-def create_features_dataframe_from_files():
+def create_features_dataframe_from_files() -> pd.DataFrame:
     """
     Creates one dataframe from sepearate files holding measured temperature for different devices, target temperature
     for radiator and valve level of radiator
