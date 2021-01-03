@@ -106,3 +106,25 @@ def create_features_dataframe_from_files() -> pd.DataFrame:
     return df_features
 
 
+def add_dayofweek_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds day of week to dataframe based on dataframe index
+
+    :param dataframe: dataframe to fill
+    :return: filled dataframe
+    """
+    dataframe["day_of_week"] = dataframe.index.dayofweek
+
+    return dataframe
+
+
+def add_dayminute_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds minute of day to dataframe based on dataframe index
+
+    :param dataframe: dataframe to fill
+    :return: filled dataframe
+    """
+    dataframe["day_minute"] = dataframe.index.hour * 60 + dataframe.index.minute
+
+    return dataframe

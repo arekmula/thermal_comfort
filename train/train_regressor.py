@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
-from common import create_features_dataframe_from_files
+from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe
 
 
 def main():
@@ -16,6 +16,9 @@ def main():
 
     # Drop NaNs from creating new columns
     df_features: pd.DataFrame = df_features.dropna()
+
+    df_features = add_dayofweek_to_dataframe(df_features)
+    df_features = add_dayminute_to_dataframe(df_features)
 
     # TODO: Use information about hour and week day. Currently it's lost because index -> timestamp.
     # TODO: Use data only from timestamps between 4:00 and 16:00 and only from Monday to Friday
