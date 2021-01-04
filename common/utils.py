@@ -209,3 +209,13 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
 
     return features, ground_truth
+
+
+def drop_outliers(dataframe: pd.DataFrame, outliers_range):
+
+    range = ((dataframe.index < outliers_range[0]) | (dataframe.index >= outliers_range[1]))
+
+    dropped_dataframe = dataframe.copy()
+    dropped_dataframe: pd.DataFrame = dropped_dataframe.loc[range]
+
+    return dropped_dataframe

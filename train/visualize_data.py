@@ -2,7 +2,7 @@ import pandas as pd
 
 from matplotlib import pyplot as plt
 
-from common import create_features_dataframe_from_files
+from common import create_features_dataframe_from_files, drop_outliers
 
 
 def plot_dataframe(dataframe: pd.DataFrame, columns_to_plot):
@@ -13,6 +13,10 @@ def plot_dataframe(dataframe: pd.DataFrame, columns_to_plot):
 
 def main():
     df_features_march, df_features_october = create_features_dataframe_from_files()
+    df_features_october = drop_outliers(df_features_october, ("2020-10-16", "2020-10-19"))
+    df_features_october = drop_outliers(df_features_october, ("2020-10-31", "2020-11-02"))
+    df_features_march = drop_outliers(df_features_march, ("2020-03-06", "2020-03-09"))
+
 
     columns_to_plot = []
     columns_to_plot.append("radiator_1")

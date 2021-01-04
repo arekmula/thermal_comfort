@@ -10,9 +10,9 @@ from sklearn.svm import SVR, NuSVR
 from sklearn.metrics import mean_absolute_error
 
 from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe,\
-    drop_night_hours, drop_weekends, create_time_related_features
+    drop_night_hours, drop_weekends, create_time_related_features, drop_outliers
 
-mlf.set_experiment("Thermal comfort - past_samples_test /with night_hours and weekends")
+mlf.set_experiment("past_samples_test1 no outliers/with night_hours and weekends")
 mlfs.autolog()
 
 
@@ -47,19 +47,23 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, pa
 
 def main(args):
 
-    past_samples = np.arange(1, 15)
+    past_samples = np.arange(1, 7)
+    df_features_march, df_features_october = create_features_dataframe_from_files()
 
     for past_samples in past_samples:
         with mlf.start_run(run_name=f"past_samples_{past_samples}") as run:
-            df_features_march, df_features_october = create_features_dataframe_from_files()
+
+            df_features_october1 = drop_outliers(df_features_october, ("2020-10-16", "2020-10-19"))
+            df_features_october1 = drop_outliers(df_features_october1, ("2020-10-31", "2020-11-02"))
+            df_features_march1 = drop_outliers(df_features_march, ("2020-03-06", "2020-03-09"))
 
             X_train_october, Y_train_october, X_test_october, Y_test_october = get_month_features(
-                df_features_october,
+                df_features_october1,
                 train_upper_range="2020-10-27",
                 month_name="october",
                 past_samples=past_samples)
             X_train_march, Y_train_march, X_test_march, Y_test_march = get_month_features(
-                df_features_march,
+                df_features_march1,
                 train_upper_range="2020-03-15",
                 month_name="march",
                 past_samples=past_samples)
