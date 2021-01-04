@@ -12,7 +12,7 @@ from sklearn.metrics import mean_absolute_error
 from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe,\
     drop_night_hours, drop_weekends, create_time_related_features
 
-mlf.set_experiment("Thermal comfort - past_samples_test")
+mlf.set_experiment("Thermal comfort - past_samples_test /with night_hours and weekends")
 mlfs.autolog()
 
 
@@ -27,13 +27,9 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, pa
     df_month = add_dayofweek_to_dataframe(df_month)
     df_month = add_dayminute_to_dataframe(df_month)
 
-    # Drop non relative data
-    df_month = drop_night_hours(df_month, lower_hour=4, upper_hour=16)
-    df_month = drop_weekends(df_month)
-
-    # TODO: Look for outliers in the data
+    # TODO: Look for outliers in the data - <16.10;19.10) & <31.10;) & <6.03 18:00; 9.03)
     # TODO: Check model behaviour without some features
-    # TODO: Check number of time_samples
+    # TODO: Check number of time_samples - 6 samples is the best
     # TODO: Add weather from the outside
 
     train_range = (df_month.index < train_upper_range)
@@ -51,8 +47,6 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, pa
 
 def main(args):
 
-    # regressors = ["rf", "dtr"]
-    # regressors = ["rf", "dtr", "svr", "nusvr"]
     past_samples = np.arange(1, 15)
 
     for past_samples in past_samples:
