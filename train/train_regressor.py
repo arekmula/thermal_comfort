@@ -1,5 +1,6 @@
 import mlflow as mlf
 import mlflow.sklearn as mlfs
+import numpy as np
 import pandas as pd
 
 from argparse import ArgumentParser
@@ -11,49 +12,70 @@ from sklearn.metrics import mean_absolute_error
 from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe,\
     drop_night_hours, drop_weekends, create_time_related_features
 
-mlf.set_experiment("Thermal comfort")
+mlf.set_experiment("Thermal comfort - past_samples_test")
 mlfs.autolog()
+
+
+def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, past_samples=5):
+    # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
+    df_month["temp_gt"] = df_month["temperature_middle"].shift(-1)
+
+    # Drop NaNs from creating new columns
+    df_month: pd.DataFrame = df_month.dropna()
+
+    # Add new features
+    df_month = add_dayofweek_to_dataframe(df_month)
+    df_month = add_dayminute_to_dataframe(df_month)
+
+    # Drop non relative data
+    df_month = drop_night_hours(df_month, lower_hour=4, upper_hour=16)
+    df_month = drop_weekends(df_month)
+
+    # TODO: Look for outliers in the data
+    # TODO: Check model behaviour without some features
+    # TODO: Check number of time_samples
+    # TODO: Add weather from the outside
+
+    train_range = (df_month.index < train_upper_range)
+    df_train: pd.DataFrame = df_month.loc[train_range]
+    X_train, Y_train = create_time_related_features(df_train, number_of_time_samples=past_samples)
+    mlf.log_param(f"{month_name}_train_size", df_train.size)
+
+    test_range = (df_month.index > train_upper_range)
+    df_test: pd.DataFrame = df_month.loc[test_range]
+    X_test, Y_test = create_time_related_features(df_test, number_of_time_samples=past_samples)
+    mlf.log_param(f"{month_name}_test_size", df_test.size)
+
+    return X_train, Y_train, X_test, Y_test
 
 
 def main(args):
 
-    regressors = ["rf", "dtr"]
+    # regressors = ["rf", "dtr"]
     # regressors = ["rf", "dtr", "svr", "nusvr"]
+    past_samples = np.arange(1, 15)
 
-    for reg_name in regressors:
-        with mlf.start_run(run_name=f"{reg_name}_test_4-16_no_weekends_alldata") as run:
-            df_features = create_features_dataframe_from_files()
+    for past_samples in past_samples:
+        with mlf.start_run(run_name=f"past_samples_{past_samples}") as run:
+            df_features_march, df_features_october = create_features_dataframe_from_files()
 
-            # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
-            df_features["temp_gt"] = df_features["temperature_middle"].shift(-1)
+            X_train_october, Y_train_october, X_test_october, Y_test_october = get_month_features(
+                df_features_october,
+                train_upper_range="2020-10-27",
+                month_name="october",
+                past_samples=past_samples)
+            X_train_march, Y_train_march, X_test_march, Y_test_march = get_month_features(
+                df_features_march,
+                train_upper_range="2020-03-15",
+                month_name="march",
+                past_samples=past_samples)
 
-            # Drop NaNs from creating new columns
-            df_features: pd.DataFrame = df_features.dropna()
+            X_train = np.concatenate((X_train_october, X_train_march))
+            X_test = np.concatenate((X_test_october, X_test_march))
+            Y_train = np.concatenate((Y_train_october, Y_train_march))
+            Y_test = np.concatenate((Y_test_october, Y_test_march))
 
-            # Add new features
-            df_features = add_dayofweek_to_dataframe(df_features)
-            df_features = add_dayminute_to_dataframe(df_features)
-
-            # Drop non relative data
-            df_features = drop_night_hours(df_features, lower_hour=4, upper_hour=16)
-            df_features = drop_weekends(df_features)
-
-            # TODO: Split df features from march and october
-
-            train_range = (df_features.index < "2020-10-27")
-            df_train: pd.DataFrame = df_features.loc[train_range]
-            X_train, Y_train = create_time_related_features(df_train, number_of_time_samples=5)
-            # Y_train = df_train.pop("temp_gt").to_numpy()
-            # X_train = df_train.to_numpy()
-            mlf.log_param("train_size", df_train.size)
-
-            test_range = (df_features.index > "2020-10-27")
-            df_test: pd.DataFrame = df_features.loc[test_range]
-            # Y_test = df_test.pop("temp_gt").to_numpy()
-            # X_test = df_test.to_numpy()
-            X_test, Y_test = create_time_related_features(df_test, number_of_time_samples=5)
-            mlf.log_param("test_size", df_test.size)
-
+            reg_name="rf"
             if reg_name == "rf":
                 reg = RandomForestRegressor(random_state=42)
             elif reg_name == "svr":
@@ -65,6 +87,7 @@ def main(args):
             Y_predicted = reg.predict(X_test)
 
             test_mae = mean_absolute_error(Y_test, Y_predicted)
+
             print(f"MAE {reg_name}: {test_mae}")
             mlf.log_metric("MAE", test_mae)
             mlfs.log_model(reg, f"{reg_name}_reg")

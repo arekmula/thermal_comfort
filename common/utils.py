@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import pandas as pd
+from typing import Tuple
 
 
 def get_devices_serial_numbers(path: str):
@@ -75,7 +76,7 @@ def process_supply_points_file(path: str, serial_numbers, device_name=None):
     return df_temperatures
 
 
-def create_features_dataframe_from_files() -> pd.DataFrame:
+def create_features_dataframe_from_files() -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Creates one dataframe from sepearate files holding measured temperature for different devices, target temperature
     for radiator and valve level of radiator
@@ -85,41 +86,47 @@ def create_features_dataframe_from_files() -> pd.DataFrame:
     """
     serial_numbers = get_devices_serial_numbers(path='../data/additional_info.json')
 
-    df_temperature = process_supply_points_file(
+    df_temperature_october = process_supply_points_file(
         '../data/office_1_temperature_supply_points_data_2020-10-13_2020-11-02.csv',
         serial_numbers)
-    df_temperature_1 = process_supply_points_file(
+    df_temperature_march = process_supply_points_file(
         '../data/office_1_temperature_supply_points_data_2020-03-05_2020-03-19.csv',
         serial_numbers)
-    df_temperature = pd.concat([df_temperature, df_temperature_1])
+    # df_temperature_october = pd.concat([df_temperature_october, df_temperature_march])
 
-    df_target_temperature = process_supply_points_file(
+    df_target_temperature_october = process_supply_points_file(
         "../data/office_1_targetTemperature_supply_points_data_2020-10-13_2020-11-01.csv",
         serial_numbers,
         device_name="radiator_1_target")
-    df_target_temperature_1 = process_supply_points_file(
+    df_target_temperature_march = process_supply_points_file(
         "../data/office_1_targetTemperature_supply_points_data_2020-03-05_2020-03-19.csv",
         serial_numbers,
         device_name="radiator_1_target")
-    df_target_temperature = pd.concat([df_target_temperature, df_target_temperature_1])
+    # df_target_temperature_october = pd.concat([df_target_temperature_october, df_target_temperature_march])
 
-    df_valve_level = process_supply_points_file(
+    df_valve_level_october = process_supply_points_file(
         "../data/office_1_valveLevel_supply_points_data_2020-10-13_2020-11-01.csv",
         serial_numbers,
         device_name="radiator_1_valve_level"
     )
-    df_valve_level_1 = process_supply_points_file(
+    df_valve_level_march = process_supply_points_file(
         "../data/office_1_valveLevel_supply_points_data_2020-03-05_2020-03-19.csv",
         serial_numbers,
         device_name="radiator_1_valve_level"
     )
-    df_valve_level = pd.concat([df_valve_level, df_valve_level_1])
+    # df_valve_level_october = pd.concat([df_valve_level_october, df_valve_level_march])
 
-    df_features = pd.concat([df_temperature, df_target_temperature, df_valve_level], axis=1)
-    df_features = df_features.dropna()
-    df_features = df_features.sort_index()
+    df_features_october = pd.concat([df_temperature_october, df_target_temperature_october,
+                                     df_valve_level_october], axis=1)
+    df_features_october = df_features_october.dropna()
+    df_features_october = df_features_october.sort_index()
 
-    return df_features
+    df_features_march = pd.concat([df_temperature_march, df_target_temperature_march,
+                                   df_valve_level_march], axis=1)
+    df_features_march = df_features_march.dropna()
+    df_features_march = df_features_march.sort_index()
+
+    return df_features_march, df_features_october
 
 
 def add_dayofweek_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -129,9 +136,10 @@ def add_dayofweek_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     :param dataframe: dataframe to fill
     :return: filled dataframe
     """
-    dataframe["day_of_week"] = dataframe.index.dayofweek
+    output_dataframe = dataframe.copy()
+    output_dataframe["day_of_week"] = dataframe.index.dayofweek
 
-    return dataframe
+    return output_dataframe
 
 
 def add_dayminute_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -186,7 +194,7 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     :return ground_truth: numpy array with ground truth corresponding to features array
     """
 
-    ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples-1:-1]
+    ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples - 1:-1]
 
     number_of_features = len(dataframe.columns)
     number_of_samples = len(dataframe) - number_of_time_samples
@@ -195,7 +203,7 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     np_dataframe = dataframe.to_numpy()
 
     for sample_number in range(number_of_samples):
-        features[sample_number, :, :] = np_dataframe[sample_number:sample_number+number_of_time_samples]
+        features[sample_number, :, :] = np_dataframe[sample_number:sample_number + number_of_time_samples]
 
     # 3D array needs to be reshaped into 2D array for scikit-learn
     features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
