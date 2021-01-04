@@ -88,20 +88,36 @@ def create_features_dataframe_from_files() -> pd.DataFrame:
     df_temperature = process_supply_points_file(
         '../data/office_1_temperature_supply_points_data_2020-10-13_2020-11-02.csv',
         serial_numbers)
+    df_temperature_1 = process_supply_points_file(
+        '../data/office_1_temperature_supply_points_data_2020-03-05_2020-03-19.csv',
+        serial_numbers)
+    df_temperature = pd.concat([df_temperature, df_temperature_1])
 
     df_target_temperature = process_supply_points_file(
         "../data/office_1_targetTemperature_supply_points_data_2020-10-13_2020-11-01.csv",
         serial_numbers,
         device_name="radiator_1_target")
+    df_target_temperature_1 = process_supply_points_file(
+        "../data/office_1_targetTemperature_supply_points_data_2020-03-05_2020-03-19.csv",
+        serial_numbers,
+        device_name="radiator_1_target")
+    df_target_temperature = pd.concat([df_target_temperature, df_target_temperature_1])
 
     df_valve_level = process_supply_points_file(
         "../data/office_1_valveLevel_supply_points_data_2020-10-13_2020-11-01.csv",
         serial_numbers,
         device_name="radiator_1_valve_level"
     )
+    df_valve_level_1 = process_supply_points_file(
+        "../data/office_1_valveLevel_supply_points_data_2020-03-05_2020-03-19.csv",
+        serial_numbers,
+        device_name="radiator_1_valve_level"
+    )
+    df_valve_level = pd.concat([df_valve_level, df_valve_level_1])
 
     df_features = pd.concat([df_temperature, df_target_temperature, df_valve_level], axis=1)
     df_features = df_features.dropna()
+    df_features = df_features.sort_index()
 
     return df_features
 
@@ -127,4 +143,21 @@ def add_dayminute_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     dataframe["day_minute"] = dataframe.index.hour * 60 + dataframe.index.minute
 
+    return dataframe
+
+
+def drop_night_hours(dataframe: pd.DataFrame, lower_hour, upper_hour) -> pd.DataFrame:
+
+    lower_day_minute = lower_hour * 60
+    upper_day_minute = upper_hour * 60
+    dataframe = dataframe[(dataframe["day_minute"] >= lower_day_minute) & (dataframe["day_minute"] <= upper_day_minute)]
+
+    return dataframe
+
+
+def drop_weekends(dataframe: pd.DataFrame) -> pd.DataFrame:
+
+    saturday_day_number = 5
+    dataframe = dataframe[(dataframe["day_of_week"] < saturday_day_number)]
+    print(dataframe)
     return dataframe

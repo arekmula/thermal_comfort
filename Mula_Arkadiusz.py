@@ -28,7 +28,7 @@ def main():
 
     df_temperature_resampled = df_temperature.resample(pd.Timedelta(minutes=15)).mean().fillna(method='ffill')
     df_temperature_resampled = df_temperature_resampled.loc[start:stop]
-    df_temperature_resampled['predicted'] = 0
+    df_temperature_resampled['predicted'] = 0.0
 
     current = start - pd.DateOffset(minutes=15)
     while current < stop:
