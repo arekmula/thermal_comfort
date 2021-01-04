@@ -1,5 +1,5 @@
 import json
-
+import numpy as np
 import pandas as pd
 
 
@@ -147,6 +147,14 @@ def add_dayminute_to_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 
 def drop_night_hours(dataframe: pd.DataFrame, lower_hour, upper_hour) -> pd.DataFrame:
+    """
+    Drops data from dataframe that was not collected between lower_hour and upper_hour
+
+    :param dataframe: dataframe to change
+    :param lower_hour: lower hour. For example 4 means 4:00 AM
+    :param upper_hour: upper hour. For example 16 means 4:00 PM
+    :return: changed dataframe
+    """
 
     lower_day_minute = lower_hour * 60
     upper_day_minute = upper_hour * 60
@@ -156,8 +164,40 @@ def drop_night_hours(dataframe: pd.DataFrame, lower_hour, upper_hour) -> pd.Data
 
 
 def drop_weekends(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """
+    Drops data from dataframe that was collected on Saturday and Sunday
+    :param dataframe: dataframe to clean
+    :return: clenaed dataframe
+    """
 
     saturday_day_number = 5
     dataframe = dataframe[(dataframe["day_of_week"] < saturday_day_number)]
-    print(dataframe)
     return dataframe
+
+
+def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples=10):
+    """
+    Create time-relative features from input dataframe. Takes features from last number of time samples and create
+    time relative feature for each timestamp
+
+    :param dataframe: input dataframe with features where temp_gt is ground truth column
+    :param number_of_time_samples: number of samples from past you want to consider
+    :return features: numpy array with time relative features
+    :return ground_truth: numpy array with ground truth corresponding to features array
+    """
+
+    ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples-1:-1]
+
+    number_of_features = len(dataframe.columns)
+    number_of_samples = len(dataframe) - number_of_time_samples
+    features = np.zeros((number_of_samples, number_of_time_samples, number_of_features))
+
+    np_dataframe = dataframe.to_numpy()
+
+    for sample_number in range(number_of_samples):
+        features[sample_number, :, :] = np_dataframe[sample_number:sample_number+number_of_time_samples]
+
+    # 3D array needs to be reshaped into 2D array for scikit-learn
+    features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
+
+    return features, ground_truth

@@ -9,7 +9,7 @@ from sklearn.svm import SVR, NuSVR
 from sklearn.metrics import mean_absolute_error
 
 from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe,\
-    drop_night_hours, drop_weekends
+    drop_night_hours, drop_weekends, create_time_related_features
 
 mlf.set_experiment("Thermal comfort")
 mlfs.autolog()
@@ -17,7 +17,6 @@ mlfs.autolog()
 
 def main(args):
 
-    # reg_name = args.reg
     regressors = ["rf", "dtr"]
     # regressors = ["rf", "dtr", "svr", "nusvr"]
 
@@ -31,23 +30,28 @@ def main(args):
             # Drop NaNs from creating new columns
             df_features: pd.DataFrame = df_features.dropna()
 
+            # Add new features
             df_features = add_dayofweek_to_dataframe(df_features)
             df_features = add_dayminute_to_dataframe(df_features)
+
+            # Drop non relative data
             df_features = drop_night_hours(df_features, lower_hour=4, upper_hour=16)
             df_features = drop_weekends(df_features)
 
-            # TODO: Use data only from timestamps between 4:00 and 16:00 and only from Monday to Friday
+            # TODO: Split df features from march and october
 
             train_range = (df_features.index < "2020-10-27")
             df_train: pd.DataFrame = df_features.loc[train_range]
-            Y_train = df_train.pop("temp_gt").to_numpy()
-            X_train = df_train.to_numpy()
+            X_train, Y_train = create_time_related_features(df_train, number_of_time_samples=5)
+            # Y_train = df_train.pop("temp_gt").to_numpy()
+            # X_train = df_train.to_numpy()
             mlf.log_param("train_size", df_train.size)
 
             test_range = (df_features.index > "2020-10-27")
             df_test: pd.DataFrame = df_features.loc[test_range]
-            Y_test = df_test.pop("temp_gt").to_numpy()
-            X_test = df_test.to_numpy()
+            # Y_test = df_test.pop("temp_gt").to_numpy()
+            # X_test = df_test.to_numpy()
+            X_test, Y_test = create_time_related_features(df_test, number_of_time_samples=5)
             mlf.log_param("test_size", df_test.size)
 
             if reg_name == "rf":
@@ -68,7 +72,6 @@ def main(args):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    # parser.add_argument("--reg", metavar="reg", type=str, required=True)
 
     args, _ = parser.parse_known_args()
 
