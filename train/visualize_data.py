@@ -28,7 +28,6 @@ def main():
     plot_dataframe(df_features_march, columns_to_plot)
     plot_dataframe(df_features_october, columns_to_plot)
 
-
     plt.show()
 
 

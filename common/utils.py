@@ -219,3 +219,30 @@ def drop_outliers(dataframe: pd.DataFrame, outliers_range):
     dropped_dataframe: pd.DataFrame = dropped_dataframe.loc[range]
 
     return dropped_dataframe
+
+
+def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, past_samples=5):
+    # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
+    df_month["temp_gt"] = df_month["temperature_middle"].shift(-1)
+
+    # Drop NaNs from creating new columns
+    df_month: pd.DataFrame = df_month.dropna()
+
+    # Add new features
+    df_month = add_dayofweek_to_dataframe(df_month)
+    df_month = add_dayminute_to_dataframe(df_month)
+
+    # TODO: Look for outliers in the data - <16.10;19.10) & <31.10;) & <6.03 18:00; 9.03)
+    # TODO: Check model behaviour without some features - best features -> 4
+    # TODO: Check number of time_samples - 6 samples is the best
+    # TODO: Add weather from the outside
+
+    train_range = (df_month.index < train_upper_range)
+    df_train: pd.DataFrame = df_month.loc[train_range]
+    X_train, Y_train = create_time_related_features(df_train, number_of_time_samples=past_samples)
+
+    test_range = (df_month.index > train_upper_range)
+    df_test: pd.DataFrame = df_month.loc[test_range]
+    X_test, Y_test = create_time_related_features(df_test, number_of_time_samples=past_samples)
+
+    return X_train, Y_train, X_test, Y_test
