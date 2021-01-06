@@ -1,22 +1,19 @@
 import mlflow as mlf
 import mlflow.sklearn as mlfs
 import numpy as np
-import pandas as pd
 import pickle
 
 from argparse import ArgumentParser
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Lasso, ElasticNet
 from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.model_selection import GridSearchCV
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import SVR, NuSVR
+
 from sklearn.metrics import mean_absolute_error
 
 from common import create_features_dataframe_from_files, add_dayofweek_to_dataframe, add_dayminute_to_dataframe,\
     drop_night_hours, drop_weekends, create_time_related_features, drop_outliers, get_month_features
 
-mlf.set_experiment("GridSearchCV_v1_v2")
+mlf.set_experiment("Standard_scaler")
 mlfs.autolog()
 
 
@@ -57,15 +54,6 @@ def main(args):
         if reg_name == "rf":
             reg = RandomForestRegressor(random_state=42)
 
-        tuned_parameters = [{"n_estimators": [10, 25, 50, 75, 100, 125, 150, 175, 200],
-                             "criterion": ["mae", "mse"],
-                             "max_features": ["auto", "sqrt", "log2"],
-                             }]
-
-        reg = GridSearchCV(RandomForestRegressor(random_state=42),
-                           param_grid=tuned_parameters,
-                           scoring="neg_mean_absolute_error",
-                           n_jobs=-1)
         reg.fit(X_train_k, Y_train)
         Y_predicted = reg.predict(X_test_k)
 
@@ -73,6 +61,10 @@ def main(args):
 
         print(f"MAE {reg_name}: {test_mae}")
         mlf.log_metric("MAE", test_mae)
+
+        pickle.dump(reg, open("../models/regressor.p", "wb"))
+        pickle.dump(reg, open("../models/feature_selector.p", "wb"))
+
         # mlfs.log_model(reg, f"{reg_name}_reg")
 
 

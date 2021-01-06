@@ -212,16 +212,32 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
 
 
 def drop_outliers(dataframe: pd.DataFrame, outliers_range):
+    """
+    Drops detected outliers from dataframe
 
-    range = ((dataframe.index < outliers_range[0]) | (dataframe.index >= outliers_range[1]))
+    :param dataframe: dataframe with outliers
+    :param outliers_range: outliers range tuple, where 0 index is lower range and 1 index is upper range
+    :return dropped_dataframe: dataframe with deleted outliers
+    """
+
+    range_mask = ((dataframe.index < outliers_range[0]) | (dataframe.index >= outliers_range[1]))
 
     dropped_dataframe = dataframe.copy()
-    dropped_dataframe: pd.DataFrame = dropped_dataframe.loc[range]
+    dropped_dataframe: pd.DataFrame = dropped_dataframe.loc[range_mask]
 
     return dropped_dataframe
 
 
 def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, past_samples=5):
+    """
+    Creates features from month dataframe.
+
+    :param df_month: dataframe with one month of data
+    :param train_upper_range: range of data you want to use to train and to test
+    :param month_name: name of month
+    :param past_samples: number of past samples you want to use for each timestamp
+    :return: X_train, Y_train, X_test, Y_test
+    """
     # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
     df_month["temp_gt"] = df_month["temperature_middle"].shift(-1)
 
@@ -232,9 +248,6 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, pa
     df_month = add_dayofweek_to_dataframe(df_month)
     df_month = add_dayminute_to_dataframe(df_month)
 
-    # TODO: Look for outliers in the data - <16.10;19.10) & <31.10;) & <6.03 18:00; 9.03)
-    # TODO: Check model behaviour without some features - best features -> 4
-    # TODO: Check number of time_samples - 6 samples is the best
     # TODO: Add weather from the outside
 
     train_range = (df_month.index < train_upper_range)
