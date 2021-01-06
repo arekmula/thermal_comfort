@@ -28,7 +28,11 @@ def main():
     df_valve = pd.read_csv(arguments['file_valve_level'], index_col=0, parse_dates=True)
 
     df_temperature_serial_number = df_temperature[df_temperature["serialNumber"] == arguments["serial_number"]]
-    df_temperature_resampled = df_temperature_serial_number.resample(pd.Timedelta(minutes=15)).mean().fillna(method='ffill')
+    # Adding label="right" means if we are resampling every 15 minutes, and the last data is from timestamps
+    # 22:45, 22:47, 22:53, 22:58, it will resample this timestamps to one -> 23:00.
+    # If label="left" that means that those timestamps would be missed and the last timestamp would be 22:45
+    df_temperature_resampled = df_temperature_serial_number.resample(pd.Timedelta(minutes=15),
+                                                                     label="right").mean().fillna(method='ffill')
     df_temperature_resampled = df_temperature_resampled.loc[start:stop]
     df_temperature_resampled['predicted'] = 0.0
 

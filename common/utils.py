@@ -209,7 +209,10 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     np_dataframe = dataframe.to_numpy()
 
     for sample_number in range(number_of_samples):
-        features[sample_number, :, :] = np_dataframe[sample_number:sample_number + number_of_time_samples]
+        if create_gt:
+            features[sample_number, :, :] = np_dataframe[sample_number:sample_number + number_of_time_samples]
+        else:
+            features[sample_number, :, :] = np_dataframe[sample_number+1:sample_number+1 + number_of_time_samples]
 
     # 3D array needs to be reshaped into 2D array for scikit-learn
     features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
