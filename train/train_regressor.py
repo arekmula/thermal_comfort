@@ -63,7 +63,7 @@ def main(args):
         mlf.log_metric("MAE", test_mae)
 
         pickle.dump(reg, open("../models/regressor.p", "wb"))
-        pickle.dump(reg, open("../models/feature_selector.p", "wb"))
+        pickle.dump(select_k_best, open("../models/feature_selector.p", "wb"))
 
         # mlfs.log_model(reg, f"{reg_name}_reg")
 

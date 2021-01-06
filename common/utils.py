@@ -28,24 +28,26 @@ def get_devices_serial_numbers(path: str):
     return devices_serial_numbers
 
 
-def process_supply_points_file(path: str, serial_numbers, device_name=None):
+def process_supply_points_file(input_dataframe, serial_numbers, device_name=None, label="left"):
     """
     Creates dataframe from input supply point file. If device_name is not given it creates dataframe based on devices
     serial numbers. Otherwise it create dataframe for only one device (assume that input file has only one serialNumber).
 
-    :param path: path to csv file containing input data
+    :param label: label to used in resampling. Default -> left
+    :param input_dataframe: path to csv file containing input data or dataframe
     :param serial_numbers: serial numbers of devices to slice
     :param device_name: device name if input data contains only one serial number
     :return dataframe based on input file:
     """
-    try:
-        df_temporary = pd.read_csv(path)
-    except FileNotFoundError as e:
-        print(e)
-        return None
+    if type(input_dataframe) is str:
+        try:
+            df_temporary = pd.read_csv(input_dataframe, index_col=0, parse_dates=True)
+        except FileNotFoundError as e:
+            print(e)
+            return None
+    elif type(input_dataframe) is pd.DataFrame:
+        df_temporary = input_dataframe.copy()
 
-    df_temporary.rename(columns={"Unnamed: 0": "time"}, inplace=True)
-    df_temporary["time"] = pd.to_datetime(df_temporary["time"])
     df_temporary.drop(columns=["unit"], inplace=True)
 
     # List holding dataframes for each sensor device
@@ -60,18 +62,18 @@ def process_supply_points_file(path: str, serial_numbers, device_name=None):
             df_device_renamed = df_device.rename(columns={"value": device_name})
             df_device_renamed.drop(columns=["serialNumber"], inplace=True)
             # Set time as index
-            df_device_renamed.set_index("time", inplace=True)
+            # df_device_renamed.set_index("time", inplace=True)
             df_devices.append(df_device_renamed)
     else:
         df_device_renamed = df_temporary.rename(columns={"value": device_name})
         # Set time as index
-        df_device_renamed.set_index("time", inplace=True)
+        # df_device_renamed.set_index("time", inplace=True)
         df_devices.append(df_device_renamed)
 
     # Create one dataframe for all devices
     df_temperatures = pd.concat(df_devices)
     # Resample device
-    df_temperatures = df_temperatures.resample(pd.Timedelta(minutes=15)).mean().fillna(method="ffill")
+    df_temperatures = df_temperatures.resample(pd.Timedelta(minutes=15), label=label).mean().fillna(method="ffill")
 
     return df_temperatures
 
@@ -183,18 +185,22 @@ def drop_weekends(dataframe: pd.DataFrame) -> pd.DataFrame:
     return dataframe
 
 
-def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples=10):
+def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples=10, create_gt=True):
     """
     Create time-relative features from input dataframe. Takes features from last number of time samples and create
     time relative feature for each timestamp
 
+    :param create_gt: create ground_truth data?
     :param dataframe: input dataframe with features where temp_gt is ground truth column
     :param number_of_time_samples: number of samples from past you want to consider
     :return features: numpy array with time relative features
     :return ground_truth: numpy array with ground truth corresponding to features array
     """
 
-    ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples - 1:-1]
+    if create_gt:
+        ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples - 1:-1]
+    else:
+        ground_truth = None
 
     number_of_features = len(dataframe.columns)
     number_of_samples = len(dataframe) - number_of_time_samples

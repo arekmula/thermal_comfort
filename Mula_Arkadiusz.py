@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from sklearn.metrics import mean_absolute_error
 
 from processing.utils import perform_processing
 
@@ -26,7 +27,8 @@ def main():
     df_target_temperature = pd.read_csv(arguments['file_target_temperature'], index_col=0, parse_dates=True)
     df_valve = pd.read_csv(arguments['file_valve_level'], index_col=0, parse_dates=True)
 
-    df_temperature_resampled = df_temperature.resample(pd.Timedelta(minutes=15)).mean().fillna(method='ffill')
+    df_temperature_serial_number = df_temperature[df_temperature["serialNumber"] == arguments["serial_number"]]
+    df_temperature_resampled = df_temperature_serial_number.resample(pd.Timedelta(minutes=15)).mean().fillna(method='ffill')
     df_temperature_resampled = df_temperature_resampled.loc[start:stop]
     df_temperature_resampled['predicted'] = 0.0
 
@@ -43,6 +45,7 @@ def main():
         df_temperature_resampled.at[current, 'predicted'] = predicted_temperature
 
     df_temperature_resampled.to_csv(results_file)
+    print(mean_absolute_error(df_temperature_resampled["value"], df_temperature_resampled["predicted"]))
 
 
 if __name__ == '__main__':
