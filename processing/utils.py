@@ -33,12 +33,12 @@ def perform_processing(
 
     X_related_features, _ = create_time_related_features(df_features, number_of_time_samples=3, create_gt=False)
 
-    with Path('models/feature_selector.p').open("rb") as feature_selector_file:
+    with Path('models/temp_feature_selector.p').open("rb") as feature_selector_file:
         feature_selector = pickle.load(feature_selector_file)
 
     X_related_features_selected = feature_selector.transform(X_related_features)
 
-    with Path("models/regressor.p").open("rb") as regressor_file:
+    with Path("models/temp_regressor.p").open("rb") as regressor_file:
         regressor = pickle.load(regressor_file)
 
     Y_predict = regressor.predict([X_related_features_selected[-1]])

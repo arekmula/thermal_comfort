@@ -198,7 +198,7 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     """
 
     if create_gt:
-        ground_truth = dataframe.pop("temp_gt").to_numpy()[number_of_time_samples - 1:-1]
+        ground_truth = dataframe.pop("gt").to_numpy()[number_of_time_samples - 1:-1]
     else:
         ground_truth = None
 
@@ -237,18 +237,19 @@ def drop_outliers(dataframe: pd.DataFrame, outliers_range):
     return dropped_dataframe
 
 
-def get_month_features(df_month: pd.DataFrame, train_upper_range, month_name, past_samples=5):
+def get_month_features(df_month: pd.DataFrame, train_upper_range, past_samples=5,
+                       gt_column_name="temperature_middle"):
     """
     Creates features from month dataframe.
 
+    :param gt_column_name: column name of ground truth data
     :param df_month: dataframe with one month of data
     :param train_upper_range: range of data you want to use to train and to test
-    :param month_name: name of month
     :param past_samples: number of past samples you want to use for each timestamp
     :return: X_train, Y_train, X_test, Y_test
     """
     # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
-    df_month["temp_gt"] = df_month["temperature_middle"].shift(-1)
+    df_month["gt"] = df_month[gt_column_name].shift(-1)
 
     # Drop NaNs from creating new columns
     df_month: pd.DataFrame = df_month.dropna()

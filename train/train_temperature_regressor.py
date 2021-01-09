@@ -30,12 +30,10 @@ def main(args):
     X_train_october, Y_train_october, X_test_october, Y_test_october = get_month_features(
         df_features_october1,
         train_upper_range="2020-10-27",
-        month_name="october",
         past_samples=number_of_past_samples)
     X_train_march, Y_train_march, X_test_march, Y_test_march = get_month_features(
         df_features_march1,
         train_upper_range="2020-03-15",
-        month_name="march",
         past_samples=number_of_past_samples)
 
     X_train = np.concatenate((X_train_october, X_train_march))
@@ -62,8 +60,8 @@ def main(args):
         print(f"MAE {reg_name}: {test_mae}")
         mlf.log_metric("MAE", test_mae)
 
-        pickle.dump(reg, open("../models/regressor.p", "wb"))
-        pickle.dump(select_k_best, open("../models/feature_selector.p", "wb"))
+        pickle.dump(reg, open("../models/temp_regressor.p", "wb"))
+        pickle.dump(select_k_best, open("../models/temp_feature_selector.p", "wb"))
 
         # mlfs.log_model(reg, f"{reg_name}_reg")
 
