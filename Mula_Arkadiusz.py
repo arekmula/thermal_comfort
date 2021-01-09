@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from processing.utils import perform_processing
+from processing.utils import perform_processing, load_models
 
 
 def main():
@@ -41,12 +41,15 @@ def main():
 
     current = start - pd.DateOffset(minutes=15)
 
+    models = load_models()
+
     while current < stop:
         predicted_temperature, predicted_valve_level = perform_processing(
             df_temperature.loc[(current - pd.DateOffset(days=7)):current],
             df_target_temperature.loc[(current - pd.DateOffset(days=7)):current],
             df_valve.loc[(current - pd.DateOffset(days=7)):current],
-            arguments['serial_number']
+            arguments['serial_number'],
+            models
         )
         current = current + pd.DateOffset(minutes=15)
 
@@ -54,6 +57,7 @@ def main():
         df_combined_resampled.at[current, 'predicted_valve_level'] = predicted_valve_level
 
     print(mean_absolute_error(df_combined_resampled["temperature"], df_combined_resampled["predicted_temperature"]))
+    print(mean_absolute_error(df_combined_resampled["valve_level"], df_combined_resampled["predicted_valve_level"]))
     df_combined_resampled.to_csv(results_file)
 
 
