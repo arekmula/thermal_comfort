@@ -2,6 +2,7 @@ import pandas as pd
 import pickle
 
 from pathlib import Path
+from typing import Tuple
 
 from common.utils import get_devices_serial_numbers, process_supply_points_file,\
     add_dayminute_to_dataframe, add_dayofweek_to_dataframe, create_time_related_features
@@ -12,7 +13,7 @@ def perform_processing(
         target_temperature: pd.DataFrame,
         valve_level: pd.DataFrame,
         serial_number_for_prediction: str
-) -> float:
+) -> Tuple[float, float]:
 
     serial_numbers = get_devices_serial_numbers(path="data/additional_info.json")
 
@@ -41,4 +42,4 @@ def perform_processing(
         regressor = pickle.load(regressor_file)
 
     Y_predict = regressor.predict([X_related_features_selected[-1]])
-    return Y_predict[0]
+    return Y_predict[0], 0.0
