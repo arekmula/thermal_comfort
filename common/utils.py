@@ -73,7 +73,7 @@ def process_supply_points_file(input_dataframe, serial_numbers, device_name=None
     # Create one dataframe for all devices
     df_temperatures = pd.concat(df_devices)
     # Resample device
-    df_temperatures = df_temperatures.resample(pd.Timedelta(minutes=15), label=label).mean().fillna(method="ffill")
+    df_temperatures = df_temperatures.resample(pd.Timedelta(minutes=15)).mean().fillna(method="ffill")
 
     return df_temperatures
 
@@ -197,27 +197,36 @@ def create_time_related_features(dataframe: pd.DataFrame, number_of_time_samples
     :return ground_truth: numpy array with ground truth corresponding to features array
     """
 
+    test_dataframe = dataframe.copy()
+
     if create_gt:
-        ground_truth = dataframe.pop("gt").to_numpy()[number_of_time_samples - 1:-1]
+        ground_truth = dataframe.pop("gt")[number_of_time_samples:-1]
     else:
         ground_truth = None
 
     number_of_features = len(dataframe.columns)
     number_of_samples = len(dataframe) - number_of_time_samples
     features = np.zeros((number_of_samples, number_of_time_samples, number_of_features))
+    # df_features = pd.DataFrame(index=dataframe.index.values[number_of_time_samples:])
 
     np_dataframe = dataframe.to_numpy()
 
     for sample_number in range(number_of_samples):
         if create_gt:
-            features[sample_number, :, :] = np_dataframe[sample_number:sample_number + number_of_time_samples]
+            features[sample_number, :, :] = np_dataframe[sample_number+1:sample_number+1 + number_of_time_samples]
         else:
             features[sample_number, :, :] = np_dataframe[sample_number+1:sample_number+1 + number_of_time_samples]
 
-    # 3D array needs to be reshaped into 2D array for scikit-learn
-    features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
+    if create_gt:
+        # 3D array needs to be reshaped into 2D array for scikit-learn
+        features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
+        df_features = pd.DataFrame(features[:-1], index=dataframe.index.values[number_of_time_samples:-1])
+    else:
+        # 3D array needs to be reshaped into 2D array for scikit-learn
+        features = features.reshape((number_of_samples, number_of_time_samples * number_of_features))
+        df_features = pd.DataFrame(features, index=dataframe.index.values[number_of_time_samples:])
 
-    return features, ground_truth
+    return df_features, ground_truth
 
 
 def drop_outliers(dataframe: pd.DataFrame, outliers_range):
@@ -249,7 +258,7 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, past_samples=5
     :return: X_train, Y_train, X_test, Y_test
     """
     # Create ground truth data by shifting measured temperature from next timestamp to previous timestamp
-    df_month["gt"] = df_month[gt_column_name].shift(-1)
+    df_month["gt"] = df_month[gt_column_name].shift(-2)
 
     # Drop NaNs from creating new columns
     df_month: pd.DataFrame = df_month.dropna()
@@ -264,7 +273,7 @@ def get_month_features(df_month: pd.DataFrame, train_upper_range, past_samples=5
     df_train: pd.DataFrame = df_month.loc[train_range]
     X_train, Y_train = create_time_related_features(df_train, number_of_time_samples=past_samples)
 
-    test_range = (df_month.index > train_upper_range)
+    test_range = (df_month.index >= train_upper_range)
     df_test: pd.DataFrame = df_month.loc[test_range]
     X_test, Y_test = create_time_related_features(df_test, number_of_time_samples=past_samples)
 

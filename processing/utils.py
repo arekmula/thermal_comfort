@@ -35,12 +35,10 @@ def perform_processing(
 ) -> Tuple[float, float]:
     serial_numbers = get_devices_serial_numbers(path="data/additional_info.json")
 
-    df_temperature = process_supply_points_file(temperature, serial_numbers, label="right")
+    df_temperature = process_supply_points_file(temperature, serial_numbers)
     df_target_temperature = process_supply_points_file(target_temperature, serial_numbers,
-                                                       device_name="radiator_1_target",
-                                                       label="right")
-    df_valve_level = process_supply_points_file(valve_level, serial_numbers, "radiator_1_valve_level",
-                                                label="right")
+                                                       device_name="radiator_1_target")
+    df_valve_level = process_supply_points_file(valve_level, serial_numbers, "radiator_1_valve_level")
 
     df_features = pd.concat([df_temperature, df_target_temperature, df_valve_level], axis=1)
     df_features = df_features.dropna()

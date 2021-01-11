@@ -1,6 +1,7 @@
 import mlflow as mlf
 import mlflow.sklearn as mlfs
 import numpy as np
+import pandas as pd
 import pickle
 
 from argparse import ArgumentParser
@@ -36,10 +37,10 @@ def main(args):
         train_upper_range="2020-03-15",
         past_samples=number_of_past_samples)
 
-    X_train = np.concatenate((X_train_october, X_train_march))
-    X_test = np.concatenate((X_test_october, X_test_march))
-    Y_train = np.concatenate((Y_train_october, Y_train_march))
-    Y_test = np.concatenate((Y_test_october, Y_test_march))
+    X_train = pd.concat((X_train_october, X_train_march))
+    X_test = pd.concat((X_test_october, X_test_march))
+    Y_train = pd.concat((Y_train_october, Y_train_march))
+    Y_test = pd.concat((Y_test_october, Y_test_march))
 
     k_best_features = 3
     with mlf.start_run(run_name=f"k={k_best_features}, ps={number_of_past_samples}") as run:
