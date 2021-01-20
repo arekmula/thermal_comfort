@@ -1,0 +1,8 @@
+{
+  "serial_number": "0015BC0035001299",
+  "start": "2020-10-27 0:45",
+  "stop": "2020-10-31 0:00",
+  "file_temperature": "data/office_1_temperature_supply_points_data_2020-10-13_2020-11-02.csv",
+  "file_target_temperature": "data/office_1_targetTemperature_supply_points_data_2020-10-13_2020-11-01.csv",
+  "file_valve_level": "data/office_1_valveLevel_supply_points_data_2020-10-13_2020-11-01.csv"
+}
